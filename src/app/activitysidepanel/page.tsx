@@ -56,7 +56,16 @@ export default function Page() {
     setParticipantId(newParticipant.id);
     setIsRegistered(true);
 
-    // Notify main stage about new participant
+    // Add to local state immediately
+    setPollState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        participants: [...prev.participants, newParticipant],
+      };
+    });
+
+    // Notify main stage and other side panels about new participant
     const message: PollMessage = {
       type: 'PARTICIPANT_JOINED',
       payload: newParticipant,
@@ -138,15 +147,48 @@ export default function Page() {
     initializeSidePanelClient();
   }, []);
 
-  // Listen for state updates from main stage
+  // Listen for messages from other side panels (via broadcast)
   useEffect(() => {
     if (!sidePanelClient) return;
 
     sidePanelClient.on('frameToFrameMessage', (message) => {
       try {
         const pollMessage = JSON.parse(message.payload) as PollMessage;
-        if (pollMessage.type === 'STATE_UPDATE') {
-          setPollState(pollMessage.payload as PollState);
+
+        switch (pollMessage.type) {
+          case 'PARTICIPANT_JOINED':
+            // Another participant registered, add them to the list
+            const newParticipant = pollMessage.payload as Participant;
+            setPollState((prev) => {
+              if (!prev) return prev;
+              // Avoid duplicates
+              if (prev.participants.some((p) => p.id === newParticipant.id)) {
+                return prev;
+              }
+              return {
+                ...prev,
+                participants: [...prev.participants, newParticipant],
+              };
+            });
+            break;
+
+          case 'VOTE_CAST':
+            // Track votes for progress indication (optional)
+            const newVote = pollMessage.payload as Vote;
+            setPollState((prev) => {
+              if (!prev) return prev;
+              // Remove previous vote from same voter, add new one
+              const filteredVotes = prev.votes.filter((v) => v.voterId !== newVote.voterId);
+              return {
+                ...prev,
+                votes: [...filteredVotes, newVote],
+              };
+            });
+            break;
+
+          case 'STATE_UPDATE':
+            setPollState(pollMessage.payload as PollState);
+            break;
         }
       } catch (error) {
         console.error('Error handling message:', error);
