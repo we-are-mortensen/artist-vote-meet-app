@@ -13,7 +13,7 @@ export default function App() {
    */
   useEffect(() => {
     meet.addon.screensharing.exposeToMeetWhenScreensharing({
-      cloudProjectNumber: CLOUD_PROJECT_NUMBER,
+      cloudProjectNumber: '315905898182',
       // Will open the Side Panel for the activity initiator to set the
       // activity starting state. Activity won't start for other participants.
       sidePanelUrl: SIDE_PANEL_URL,
