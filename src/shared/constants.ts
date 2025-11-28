@@ -17,11 +17,11 @@
  * manifest and Google Workspace Marketplace listing.
  * @see {@link https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects}
  */
-export const CLOUD_PROJECT_NUMBER = '285788035016';
+export const CLOUD_PROJECT_NUMBER = '315905898182';
 
 export const SITE_BASE = inDebugMode()
-  ? 'https://localhost:3000/meet/animation-next-js'
-  : 'https://googleworkspace.github.io/meet/animation-next-js';
+  ? 'https://localhost:3000'
+  : 'https://we-are-mortensen.github.io/meet-artist-vote-app';
 
 function inDebugMode() {
   return process.env.NEXT_PUBLIC_DEBUG === '1';
