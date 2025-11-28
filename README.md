@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Artist Vote - Google Meet Add-on
+
+A Google Meet add-on for voting on "who is today's artist" ("Qui és l'artista d'avui?"). The poll initiator can choose between predefined lists or create custom options, participants vote anonymously, and results are displayed in real-time on the main stage.
+
+## Features
+
+- **Poll Configuration**: Choose from predefined lists or create custom options (2-50 items)
+- **Anonymous Voting**: No registration required - participants vote immediately
+- **Real-time Results**: Live vote counts, percentages, and visual progress bars
+- **Winner Detection**: Automatic winner announcement with crown emoji or tie detection
+- **Catalan Interface**: All user-facing content in Catalan
+
+## Technology Stack
+
+- **Next.js 16.0.5** with App Router
+- **React 19.2.0** with TypeScript 5
+- **Tailwind CSS 4** for styling
+- **Google Meet Add-ons SDK** v1.2.0
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js installed
+- Google Meet Add-on registered in Google Workspace Marketplace
+- Cloud Project Number: `315905898182`
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Local development with debug mode
+export NEXT_PUBLIC_DEBUG=1
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [https://localhost:3000](https://localhost:3000) to test locally.
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+### Deployment
+
+The app is deployed to GitHub Pages:
+- Production URL: https://we-are-mortensen.github.io/meet-artist-vote-app
+
+## Project Structure
+
+```
+/src
+  /app                     # Next.js pages
+    /sidepanel            # Poll configuration
+    /activitysidepanel    # Voting interface
+    /mainstage            # Results display
+  /components             # Reusable UI components
+    OptionList.tsx        # Poll options selector
+    VoteResults.tsx       # Results visualization
+    PollQuestion.tsx      # Question display
+    VoteButton.tsx        # Submit button
+    VoteConfirmation.tsx  # Post-vote confirmation
+  /data
+    predefinedOptions.json # Predefined poll lists
+  /types
+    poll.types.ts         # TypeScript definitions
+  /utils
+    voteCalculations.ts   # Vote logic and validation
+```
+
+## How to Use
+
+### In Google Meet
+
+1. **Start a Google Meet call**
+2. **Share screen** with the add-on URL
+3. **Configure poll** (as initiator):
+   - Select predefined list, OR
+   - Enter custom options (one per line)
+4. **Start voting** - All participants see options immediately
+5. **Vote** - Select option and submit
+6. **View results** - Real-time display on main stage
+
+## Testing
+
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing instructions.
+
+## Documentation
+
+- **README.md** (this file): Quick start and overview
+- **CLAUDE.md**: Complete architecture, features, and technical details
+- **IMPLEMENTATION_STATUS.md**: Current status and completion summary
+- **TESTING_GUIDE.md**: Testing procedures and scenarios
+- **POLL_OPTIONS_MODIFICATION_PLAN.md**: Implementation plan (completed)
+
+## Configuration
+
+### Environment Variables
+
+- `NEXT_PUBLIC_DEBUG=1` - Enables localhost mode for development
+
+### Constants
+
+See [src/shared/constants.ts](src/shared/constants.ts) for:
+- Cloud Project Number
+- URL endpoints
+- Debug mode configuration
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+- [Google Meet Add-ons Documentation](https://developers.google.com/meet/add-ons)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project was created for Google Meet Add-ons.

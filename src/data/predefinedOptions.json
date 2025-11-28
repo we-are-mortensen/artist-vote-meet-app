@@ -1,0 +1,44 @@
+{
+  "lists": [
+    {
+      "id": "default",
+      "name": "Llista per defecte",
+      "description": "Llista de noms predefinits per a la votació",
+      "options": [
+        "Anna",
+        "Bernat",
+        "Carla",
+        "David",
+        "Emma",
+        "Ferran",
+        "Gemma",
+        "Hugo"
+      ]
+    },
+    {
+      "id": "team",
+      "name": "Equip de treball",
+      "description": "Membres de l'equip",
+      "options": [
+        "Director/a",
+        "Cap de projecte",
+        "Desenvolupador/a Senior",
+        "Desenvolupador/a Junior",
+        "Dissenyador/a",
+        "Analista",
+        "Product Manager"
+      ]
+    },
+    {
+      "id": "simple",
+      "name": "Llista simple",
+      "description": "Opcions bàsiques",
+      "options": [
+        "Opció A",
+        "Opció B",
+        "Opció C",
+        "Opció D"
+      ]
+    }
+  ]
+}

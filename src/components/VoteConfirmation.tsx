@@ -1,10 +1,10 @@
 /**
  * Displays confirmation message after a vote has been successfully cast
- * Shows which participant was voted for and waiting message
+ * Shows which option was voted for and waiting message
  */
 
 type VoteConfirmationProps = {
-  /** Name of the participant who was voted for */
+  /** Name of the option that was voted for */
   votedForName: string;
 };
 

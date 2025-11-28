@@ -143,36 +143,32 @@ mkcert localhost
 1. The setup side panel opens for you (the initiator)
 2. **Expected**:
    - See "Votació de l'Artista" title
-   - See explanation of what will happen
+   - See option source selection (predefined or custom)
+   - See dropdown for predefined lists OR textarea for custom options
+   - See preview of selected options
    - See "Començar votació" button
-3. Click "Començar votació"
-4. **Expected**:
+3. Choose poll options:
+   - **Predefined list**: Select from dropdown (default 8 names, team 7 roles, simple 4 options)
+   - **Custom list**: Enter option names in textarea (one per line, minimum 2, maximum 50)
+4. Click "Començar votació"
+5. **Expected**:
    - Main stage appears for all participants
    - You're redirected to the activity side panel
 
-#### Step 4: Register Participants
+#### Step 4: Vote
 Each participant (including initiator):
 1. Opens the add-on side panel
-2. **Expected**: Registration form with "El teu nom:"
-3. Enter your name
-4. Click "Continuar"
+2. **Expected**: Voting interface with list of poll options (no registration needed)
+3. Select one option (radio button)
+4. Click "Enviar vot"
 5. **Expected**:
-   - Success! Moves to voting interface
-   - Main stage should update with new participant
-
-**Test**: Check main stage - should show "Esperant vots..." until participants are registered
-
-#### Step 5: Vote
-Each participant:
-1. **Expected**: See list of all registered participants
-2. Select one participant (radio button)
-3. Click "Enviar vot"
-4. **Expected**:
    - Success message: "Vot enviat correctament!"
-   - Shows who you voted for
+   - Shows which option you voted for
    - "Esperant la resta de vots..." message
 
-#### Step 6: View Results (Main Stage)
+**Test**: Check main stage - should show "Esperant vots..." and update in real-time as votes come in
+
+#### Step 5: View Results (Main Stage)
 As votes come in:
 1. **Expected**: Main stage updates in real-time
 2. **Check**:
@@ -191,37 +187,51 @@ After all votes:
 
 ## 🧪 Test Scenarios
 
-### Scenario 1: Basic Flow (2 participants)
-1. Alice and Bob join Meet
-2. Alice starts add-on
-3. Alice registers as "Alice"
-4. Bob registers as "Bob"
-5. Alice votes for Bob
-6. Bob votes for Alice
-**Expected**: Main stage shows 1 vote each (tie)
+### Scenario 1: Basic Flow with Predefined List
+1. Initiator joins Meet and starts add-on
+2. Initiator selects predefined list "Llista per defecte" (8 names)
+3. Initiator clicks "Començar votació"
+4. Multiple participants join and vote
+5. Each votes for their favorite option
+**Expected**: Main stage shows vote counts for each option, winner announced
 
-### Scenario 2: Clear Winner (5 participants)
-1. 5 participants join and register
-2. 3 vote for Alice
-3. 1 votes for Bob
-4. 1 votes for Charlie
-**Expected**: Alice wins with 60%, Bob 20%, Charlie 20%
+### Scenario 2: Custom List
+1. Initiator creates custom list with names:
+   ```
+   Anna
+   Bernat
+   Carla
+   ```
+2. Initiator clicks "Començar votació"
+3. Participants vote for options
+**Expected**: Main stage shows the 3 custom options with vote counts
 
-### Scenario 3: Three-Way Tie
-1. 3 participants register
-2. Each votes for themselves
-**Expected**: Tie message with all three participants
+### Scenario 3: Clear Winner
+1. Initiator sets up poll with 5 options
+2. 5 participants vote
+3. 3 vote for "Anna"
+4. 1 votes for "Bernat"
+5. 1 votes for "Carla"
+**Expected**: Anna wins with 60%, Bernat 20%, Carla 20%
 
-### Scenario 4: No Votes
-1. Multiple participants register
+### Scenario 4: Three-Way Tie
+1. Poll with 3 options
+2. 3 participants vote
+3. Each option gets 1 vote
+**Expected**: Tie message with all three options
+
+### Scenario 5: No Votes
+1. Initiator starts poll
 2. Nobody votes yet
 **Expected**: Main stage shows "Esperant vots..." with 0 votes
 
-### Scenario 5: Late Registration
-1. Some participants register and vote
-2. New participant registers late
-3. New participant votes
-**Expected**: New participant appears in list, vote counted
+### Scenario 6: Validation Testing
+1. Try custom list with only 1 option
+**Expected**: Error "Cal introduir almenys 2 opcions"
+2. Try custom list with 51 options
+**Expected**: Error "Màxim 50 opcions permeses"
+3. Try custom list with duplicate names
+**Expected**: Error "Hi ha opcions duplicades"
 
 ---
 
@@ -292,17 +302,22 @@ After all votes:
 
 ### Functional Testing Checklist
 
-**Registration**:
-- [ ] Participants can enter names
-- [ ] Names appear on main stage
-- [ ] Duplicate registrations handled
-- [ ] Name validation works
+**Poll Setup**:
+- [ ] Can select predefined list
+- [ ] Can create custom list
+- [ ] Preview shows correct options
+- [ ] Validation prevents < 2 options
+- [ ] Validation prevents > 50 options
+- [ ] Validation detects duplicates
+- [ ] Both modes work correctly
 
 **Voting**:
-- [ ] Can select any participant
+- [ ] Can select any option
 - [ ] Can submit vote
-- [ ] Can only vote once
+- [ ] Vote appears immediately on confirmation
+- [ ] No registration required
 - [ ] Confirmation appears after voting
+- [ ] Anonymous voting works
 
 **Results**:
 - [ ] Vote counts accurate
@@ -313,11 +328,12 @@ After all votes:
 - [ ] Real-time updates happen
 
 **Edge Cases**:
-- [ ] 1 participant works
-- [ ] 10+ participants work
-- [ ] Long names display correctly
-- [ ] All vote for same person
+- [ ] 2 options (minimum) works
+- [ ] 50 options (maximum) works
+- [ ] Long option names display correctly
+- [ ] All vote for same option
 - [ ] Nobody votes (0 votes displayed)
+- [ ] Special characters in custom options
 
 ---
 

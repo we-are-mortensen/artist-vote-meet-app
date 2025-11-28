@@ -3,25 +3,32 @@
  */
 
 /**
- * Represents a participant in the Google Meet call
+ * Represents a poll option that users can vote for
+ * This replaces the old Participant type for voting purposes
  */
-export type Participant = {
-  /** Unique identifier for the participant */
+export type PollOption = {
+  /** Unique identifier for the option */
   id: string;
-  /** Display name of the participant (in Catalan or as provided) */
+  /** Display name of the option (in Catalan or as provided) */
   name: string;
 };
+
+/**
+ * @deprecated Use PollOption instead
+ * Kept for backward compatibility during migration
+ */
+export type Participant = PollOption;
 
 /**
  * Represents a single vote cast by a participant
  */
 export type Vote = {
-  /** ID of the participant who cast the vote */
+  /** ID of the voter who cast the vote */
   voterId: string;
-  /** Name of the voter (for display purposes) */
+  /** Name of the voter (for display purposes, can be anonymous) */
   voterName: string;
-  /** ID of the participant who was voted for */
-  selectedParticipantId: string;
+  /** ID of the option that was voted for */
+  selectedOptionId: string;
   /** Unix timestamp when the vote was cast */
   timestamp: number;
 };
@@ -30,8 +37,8 @@ export type Vote = {
  * Overall state of the poll
  */
 export type PollState = {
-  /** List of all participants eligible to vote */
-  participants: Participant[];
+  /** List of all poll options that can be voted for */
+  options: PollOption[];
   /** All votes that have been cast */
   votes: Vote[];
   /** Current status of the poll */
@@ -42,21 +49,23 @@ export type PollState = {
   pollId: string;
   /** Round number (1 for initial, 2+ for tiebreakers) */
   round: number;
+  /** Source of the poll options */
+  optionsSource: 'predefined' | 'custom';
 };
 
 /**
- * Calculated results for a single participant
+ * Calculated results for a single poll option
  */
 export type VoteResult = {
-  /** ID of the participant */
-  participantId: string;
-  /** Name of the participant */
-  participantName: string;
+  /** ID of the poll option */
+  optionId: string;
+  /** Name of the poll option */
+  optionName: string;
   /** Number of votes received */
   voteCount: number;
   /** Percentage of total votes (0-100) */
   percentage: number;
-  /** List of voter names who voted for this participant */
+  /** List of voter names who voted for this option */
   voters: string[];
 };
 
@@ -64,14 +73,14 @@ export type VoteResult = {
  * Complete voting results
  */
 export type VoteResults = {
-  /** Results for each participant, sorted by vote count descending */
+  /** Results for each option, sorted by vote count descending */
   results: VoteResult[];
   /** Total number of votes cast */
   totalVotes: number;
   /** Whether there's a tie for first place */
   hasTie: boolean;
-  /** Participants who are tied (if any) */
-  tiedParticipants: Participant[];
+  /** Options that are tied (if any) */
+  tiedOptions: PollOption[];
   /** The winner (if no tie) */
   winner: VoteResult | null;
 };
@@ -99,11 +108,34 @@ export type PollMessage = {
 };
 
 /**
- * Props for participant registration
+ * @deprecated No longer using participant registration
+ * Kept for backward compatibility during migration
  */
 export type ParticipantRegistration = {
   /** Name entered by the participant */
   name: string;
   /** Unique ID generated for the participant */
   id: string;
+};
+
+/**
+ * Predefined list of poll options loaded from JSON
+ */
+export type PredefinedList = {
+  /** Unique identifier for the list */
+  id: string;
+  /** Display name of the list (in Catalan) */
+  name: string;
+  /** Description of the list (in Catalan) */
+  description: string;
+  /** Array of option names */
+  options: string[];
+};
+
+/**
+ * Container for all predefined lists
+ */
+export type PredefinedListsData = {
+  /** Array of available predefined lists */
+  lists: PredefinedList[];
 };

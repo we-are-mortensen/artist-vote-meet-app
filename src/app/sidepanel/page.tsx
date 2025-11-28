@@ -10,8 +10,14 @@ import {
   CLOUD_PROJECT_NUMBER,
   MAIN_STAGE_URL,
 } from '../../shared/constants';
-import { generatePollId } from '../../utils/voteCalculations';
-import type { PollState } from '../../types/poll.types';
+import {
+  generatePollId,
+  parseCustomOptions,
+  validateCustomOptions,
+  stringsToPollOptions
+} from '../../utils/voteCalculations';
+import type { PollState, PollOption, PredefinedListsData } from '../../types/poll.types';
+import predefinedListsData from '../../data/predefinedOptions.json';
 
 /**
  * Setup side panel for the activity initiator
@@ -22,32 +28,74 @@ export default function Page() {
   const [sidePanelClient, setSidePanelClient] = useState<MeetSidePanelClient>();
   const [isStarting, setIsStarting] = useState(false);
 
+  // Option selection state
+  const [optionsSource, setOptionsSource] = useState<'predefined' | 'custom'>('predefined');
+  const [selectedListId, setSelectedListId] = useState('default');
+  const [customOptionsText, setCustomOptionsText] = useState('');
+  const [validationError, setValidationError] = useState<string>('');
+
+  const predefinedLists = (predefinedListsData as PredefinedListsData).lists;
+
   /**
-   * Starts the voting activity
-   * Initializes the poll state and launches the activity for all participants
+   * Gets the poll options based on current selection
+   */
+  function getPollOptions(): PollOption[] | null {
+    if (optionsSource === 'predefined') {
+      const selectedList = predefinedLists.find(list => list.id === selectedListId);
+      if (!selectedList) return null;
+      return stringsToPollOptions(selectedList.options);
+    } else {
+      // Custom options
+      if (!customOptionsText.trim()) {
+        setValidationError('Si us plau, introdueix almenys 2 opcions');
+        return null;
+      }
+
+      const validation = validateCustomOptions(customOptionsText);
+      if (!validation.valid) {
+        setValidationError(validation.error || 'Opcions no vàlides');
+        return null;
+      }
+
+      return parseCustomOptions(customOptionsText);
+    }
+  }
+
+  /**
+   * Starts the voting activity with selected options
    */
   async function startVoting() {
     if (!sidePanelClient) {
       throw new Error('Side Panel is not yet initialized!');
     }
 
+    // Clear previous errors
+    setValidationError('');
+
+    // Get poll options
+    const pollOptions = getPollOptions();
+    if (!pollOptions) {
+      return; // Validation error already set
+    }
+
     setIsStarting(true);
 
     try {
-      // Initialize poll state
+      // Initialize poll state with options
       const pollState: PollState = {
-        participants: [], // Participants will register themselves
+        options: pollOptions,
         votes: [],
         status: 'voting',
         question: "Qui és l'artista d'avui?",
         pollId: generatePollId(),
         round: 1,
+        optionsSource: optionsSource,
       };
 
       await sidePanelClient.startActivity({
         mainStageUrl: MAIN_STAGE_URL,
         sidePanelUrl: ACTIVITY_SIDE_PANEL_URL,
-        // Pass the initial poll state
+        // Pass the initial poll state with options
         additionalData: JSON.stringify(pollState),
       });
 
@@ -62,7 +110,6 @@ export default function Page() {
   useEffect(() => {
     /**
      * Initializes the Add-on Side Panel Client.
-     * https://developers.google.com/meet/add-ons/reference/websdk/addon_sdk.meetsidepanelclient
      */
     async function initializeSidePanelClient() {
       const session = await meet.addon.createAddonSession({
@@ -74,37 +121,147 @@ export default function Page() {
     initializeSidePanelClient();
   }, []);
 
+  // Get current preview options
+  const previewOptions = getPollOptions();
+
   return (
     <div className="min-h-screen flex flex-col p-6 bg-white dark:bg-gray-900">
       <div className="max-w-md mx-auto w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Votació de l&apos;Artista
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Configura i inicia la votació
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Configura les opcions de votació
           </p>
         </div>
 
-        {/* Info card */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">
-            Què passarà?
-          </h2>
-          <ul className="space-y-2 text-blue-800 dark:text-blue-200 text-sm">
-            <li>• Els participants s&apos;identificaran amb el seu nom</li>
-            <li>• Cadascú votarà per qui creu que és l&apos;artista d&apos;avui</li>
-            <li>• Els resultats es mostraran en temps real a la pantalla principal</li>
-          </ul>
+        {/* Option source selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Opcions de votació:
+          </label>
+
+          {/* Predefined option */}
+          <label className={`
+            flex items-start p-4 rounded-lg border-2 cursor-pointer mb-3 transition-all
+            ${optionsSource === 'predefined'
+              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-400'}
+          `}>
+            <input
+              type="radio"
+              name="optionsSource"
+              value="predefined"
+              checked={optionsSource === 'predefined'}
+              onChange={() => setOptionsSource('predefined')}
+              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+            />
+            <div className="ml-3 flex-1">
+              <span className="block font-medium text-gray-900 dark:text-gray-100">
+                Utilitzar llista predefinida
+              </span>
+              <span className="block text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Selecciona una llista de noms ja configurada
+              </span>
+
+              {optionsSource === 'predefined' && (
+                <select
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  className="mt-3 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                    bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                    focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {predefinedLists.map(list => (
+                    <option key={list.id} value={list.id}>
+                      {list.name} ({list.options.length} opcions)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </label>
+
+          {/* Custom option */}
+          <label className={`
+            flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all
+            ${optionsSource === 'custom'
+              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-400'}
+          `}>
+            <input
+              type="radio"
+              name="optionsSource"
+              value="custom"
+              checked={optionsSource === 'custom'}
+              onChange={() => setOptionsSource('custom')}
+              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+            />
+            <div className="ml-3 flex-1">
+              <span className="block font-medium text-gray-900 dark:text-gray-100">
+                Crear llista personalitzada
+              </span>
+              <span className="block text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Introdueix els noms, un per línia
+              </span>
+
+              {optionsSource === 'custom' && (
+                <textarea
+                  value={customOptionsText}
+                  onChange={(e) => {
+                    setCustomOptionsText(e.target.value);
+                    setValidationError('');
+                  }}
+                  placeholder="Anna&#10;Bernat&#10;Carla&#10;David"
+                  rows={6}
+                  className="mt-3 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                    bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    font-mono text-sm resize-none"
+                />
+              )}
+            </div>
+          </label>
         </div>
 
+        {/* Validation error */}
+        {validationError && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              {validationError}
+            </p>
+          </div>
+        )}
+
+        {/* Preview section */}
+        {previewOptions && previewOptions.length > 0 && (
+          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vista prèvia ({previewOptions.length} opcions):
+            </h3>
+            <ul className="space-y-1 max-h-32 overflow-y-auto">
+              {previewOptions.slice(0, 10).map((option, index) => (
+                <li key={option.id} className="text-sm text-gray-600 dark:text-gray-400">
+                  {index + 1}. {option.name}
+                </li>
+              ))}
+              {previewOptions.length > 10 && (
+                <li className="text-sm text-gray-500 dark:text-gray-500 italic">
+                  ... i {previewOptions.length - 10} més
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+
         {/* Question preview */}
-        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Pregunta:
           </h3>
-          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
             Qui és l&apos;artista d&apos;avui?
           </p>
         </div>

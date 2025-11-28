@@ -2,12 +2,14 @@
 
 ## Project Overview
 
-This is a Next.js project that creates a Google Meet Add-on for voting on who is today's artist. The add-on displays a poll to all users in a Google Meet call, where the poll options are the names of all participants in the call. The results are displayed on the "mainstage" (the large screen view of the add-on).
+This is a Next.js project that creates a Google Meet Add-on for voting on who is today's artist. The poll initiator can choose between predefined lists or create a custom list of options. All participants vote anonymously, and results are displayed in real-time on the "mainstage" (the large screen view of the add-on).
 
 **Important Context:**
 - All code and comments are in English
 - All user-facing content must be in Catalan
 - The poll question is about who is today's artist ("Qui és l'artista d'avui?" in Catalan)
+- Poll options are defined by the initiator (not participant names)
+- Voting is anonymous (no registration required)
 - Future enhancement planned: implement a second poll in case of a tie, showing only the tied options
 
 ## Technology Stack
@@ -25,20 +27,29 @@ This is a Next.js project that creates a Google Meet Add-on for voting on who is
 /src
   /app                          # Next.js App Router pages
     /activitysidepanel         # Side panel shown to participants during activity
-      page.tsx                 # Color picker for individual participants
+      page.tsx                 # Voting interface for participants
     /mainstage                 # Main stage view (large screen)
-      page.tsx                 # Animated colors display
+      page.tsx                 # Real-time voting results display
     /sidepanel                 # Initial side panel for activity setup
-      page.tsx                 # Setup page for activity initiator
+      page.tsx                 # Poll configuration (predefined/custom options)
     page.tsx                   # Screenshare landing page
     layout.tsx                 # Root layout
     icon.svg                   # App icon (green striped design)
     globals.css                # Global styles with Tailwind
-  /components
-    prettyColors.tsx           # Animation component for mainstage
-    prettyColors.css           # Styles for animation
+  /components                   # Reusable UI components
+    PollQuestion.tsx           # Displays poll question in Catalan
+    OptionList.tsx             # Lists poll options as radio buttons
+    VoteButton.tsx             # Submit vote button
+    VoteConfirmation.tsx       # Post-vote confirmation message
+    VoteResults.tsx            # Results display with bars and percentages
+  /data
+    predefinedOptions.json     # Predefined poll option lists
   /shared
     constants.ts               # Configuration constants
+  /types
+    poll.types.ts              # TypeScript type definitions
+  /utils
+    voteCalculations.ts        # Vote calculation and validation utilities
 ```
 
 ## Key Configuration
@@ -74,36 +85,45 @@ Debug mode is controlled by environment variable: `process.env.NEXT_PUBLIC_DEBUG
 
 2. **Side Panel** ([src/app/sidepanel/page.tsx](src/app/sidepanel/page.tsx))
    - Shown to the activity initiator for setup
-   - Currently: allows picking a starting color
+   - Poll configuration interface:
+     - Radio buttons to choose between predefined or custom options
+     - Dropdown to select from 3 predefined lists (default, team, simple)
+     - Textarea to enter custom options (one per line)
+     - Validation: 2-50 options, no duplicates
+     - Preview of selected options
    - Creates `MeetSidePanelClient`
    - Calls `startActivity()` with:
      - `mainStageUrl`: URL for main stage
      - `sidePanelUrl`: URL for activity side panel
-     - `additionalData`: JSON string with starting state
+     - `additionalData`: JSON string with PollState (includes options array)
    - After starting, redirects to activity side panel
 
 3. **Activity Side Panel** ([src/app/activitysidepanel/page.tsx](src/app/activitysidepanel/page.tsx))
    - Shown to all participants during the activity
-   - Currently: individual color picker
-   - Uses `notifyMainStage()` for frame-to-frame messaging
-   - Sends updates to main stage
+   - No registration required - voting interface appears immediately
+   - Displays poll question and list of options as radio buttons
+   - Generates anonymous voter ID on load
+   - Submit vote button
+   - Uses `notifyMainStage()` to send vote messages
+   - Shows confirmation after voting
 
 4. **Main Stage** ([src/app/mainstage/page.tsx](src/app/mainstage/page.tsx))
    - Large screen view shown to all participants
    - Creates `MeetMainStageClient`
-   - Gets starting state via `getActivityStartingState()`
-   - Listens for frame-to-frame messages via `on('frameToFrameMessage')`
-   - Currently: displays animated colors based on messages
+   - Gets poll options from starting state via `getActivityStartingState()`
+   - Listens for vote messages via `on('frameToFrameMessage')`
+   - Real-time vote aggregation and results display
+   - Shows vote counts, percentages, progress bars
+   - Announces winner (or tie) when voting completes
 
-### Current Implementation (Pretty Colors Demo)
+### Current Implementation
 
-The existing code is a demo that:
-- Lets the initiator pick a starting color
-- Displays animated spinning lines on main stage
-- Allows each participant to change colors (only they see their changes)
-- Uses the `PrettyColors` component for visual display
-
-This demo structure needs to be adapted for the artist voting functionality.
+The app implements a complete artist voting system:
+- **Poll Setup**: Initiator chooses between predefined lists or custom options
+- **Voting**: Participants vote anonymously for their favorite option
+- **Results**: Real-time display with vote counts, percentages, and winner announcement
+- **Data Flow**: Frame-to-frame messaging for real-time synchronization
+- **Validation**: Input validation for custom options (min 2, max 50, no duplicates)
 
 ## Development Setup
 
@@ -127,69 +147,54 @@ npm start
 ### Environment Variables
 - `NEXT_PUBLIC_DEBUG=1` - Enables localhost mode, otherwise uses GitHub Pages URL
 
-## Implementation Plan for Artist Vote Feature
+## Key Features
 
-### What Needs to Change
+### Poll Configuration
+- **Predefined Lists**: 3 ready-to-use lists stored in [src/data/predefinedOptions.json](src/data/predefinedOptions.json)
+  - "Llista per defecte": 8 common Catalan names
+  - "Equip de treball": 7 work roles
+  - "Llista simple": 4 basic options (A, B, C, D)
+- **Custom Lists**: Initiator can create custom options via textarea
+  - One option per line
+  - Validation: minimum 2, maximum 50 options
+  - Duplicate detection
 
-1. **Side Panel Setup** ([src/app/sidepanel/page.tsx](src/app/sidepanel/page.tsx))
-   - Remove color picker
-   - Fetch list of meeting participants
-   - Display hardcoded question in Catalan
-   - Show "Start voting" button
-   - Pass participant list in `additionalData`
+### Voting System
+- **Anonymous Voting**: No registration required, participants vote immediately
+- **Vote Submission**: Selected option sent to main stage via frame-to-frame messaging
+- **Vote Confirmation**: Success message shows which option was voted for
+- **Single Vote**: Each voter can only vote once (identified by anonymous voter ID)
 
-2. **Activity Side Panel** ([src/app/activitysidepanel/page.tsx](src/app/activitysidepanel/page.tsx))
-   - Display poll question in Catalan: "Qui és l'artista d'avui?"
-   - Show list of participants as radio buttons/options
-   - Submit button to cast vote
-   - Send vote to main stage via `notifyMainStage()`
-   - Show confirmation after voting
+### Results Display
+- **Real-time Updates**: Main stage updates as votes come in
+- **Vote Counts**: Number of votes for each option
+- **Percentages**: Calculated and displayed for each option
+- **Progress Bars**: Visual representation of vote distribution
+- **Winner Announcement**: Crown emoji and highlight for winning option
+- **Tie Detection**: Special message when multiple options are tied for first place
 
-3. **Main Stage** ([src/app/mainstage/page.tsx](src/app/mainstage/page.tsx))
-   - Replace `PrettyColors` component
-   - Display poll results in real-time
-   - Show vote counts for each participant
-   - Update as votes come in via frame-to-frame messages
-   - Visual display of results (bars, percentages, etc.)
-   - All text in Catalan
-
-4. **Components**
-   - Remove or replace `prettyColors.tsx` and `prettyColors.css`
-   - Create new components:
-     - `PollQuestion.tsx` - Display question
-     - `ParticipantList.tsx` - List participants as options
-     - `VoteResults.tsx` - Display results on main stage
-     - `VoteConfirmation.tsx` - Show after voting
-
-5. **Data Flow**
-   ```
-   Setup Side Panel
-     ↓ (get participants, pass in additionalData)
-   Main Stage (receives starting state)
-     ↓
-   Activity Side Panel (each participant votes)
-     ↓ (notifyMainStage with vote)
-   Main Stage (aggregates votes, updates display)
-   ```
+### Data Flow
+```
+Setup Side Panel (Initiator)
+  ↓ (select/create poll options)
+Start Activity
+  ↓ (pass PollState with options in additionalData)
+Main Stage (initialize with options)
+  ↓
+Activity Side Panel (all participants)
+  ↓ (vote for option, send VOTE_CAST message)
+Main Stage (aggregate votes, calculate results, display winner)
+```
 
 ### Google Meet Add-ons SDK Key Methods
 
 - `meet.addon.createAddonSession({ cloudProjectNumber })` - Initialize session
 - `session.createMainStageClient()` - Get main stage client
 - `session.createSidePanelClient()` - Get side panel client
-- `mainStageClient.getActivityStartingState()` - Get initial data
-- `mainStageClient.on('frameToFrameMessage', callback)` - Listen for messages
+- `mainStageClient.getActivityStartingState()` - Get initial data (includes poll options)
+- `mainStageClient.on('frameToFrameMessage', callback)` - Listen for vote messages
 - `sidePanelClient.startActivity({ mainStageUrl, sidePanelUrl, additionalData })` - Start activity
-- `sidePanelClient.notifyMainStage(payload)` - Send message to main stage
-
-### API for Getting Meeting Participants
-
-**Note**: The Google Meet Add-ons SDK provides access to participant information. Check the documentation at:
-https://developers.google.com/workspace/meet/add-ons/reference/websdk/addon_sdk
-
-Methods to explore:
-- `MeetAddonSession.getMeetingInfo()` - May provide participant list
-- Co-activity APIs for participant discovery
+- `sidePanelClient.notifyMainStage(payload)` - Send vote to main stage
 
 ### Future Enhancement: Tiebreaker Poll
 
@@ -231,14 +236,23 @@ If there's a tie in the votes:
 - Path alias: `@/*` maps to `./src/*`
 - Module resolution: bundler
 
-## Next Steps for Implementation
+## Testing
 
-1. Research participant API in Google Meet Add-ons SDK
-2. Design UI/UX for voting interface (in Catalan)
-3. Implement participant fetching in setup side panel
-4. Build voting UI in activity side panel
-5. Create results display for main stage
-6. Implement real-time vote aggregation
-7. Add vote confirmation and completion states
-8. Test in actual Google Meet environment
-9. Plan tiebreaker poll feature architecture
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing instructions including:
+- Local testing procedures
+- Google Meet testing flow
+- Test scenarios (predefined lists, custom lists, validation, etc.)
+- Visual and functional testing checklists
+- Common issues and solutions
+
+## Documentation
+
+- **README.md**: Quick start guide and project overview
+- **CLAUDE.md** (this file): Complete architecture, features, and technical details
+- **IMPLEMENTATION_STATUS.md**: Current implementation status and completion summary
+- **TESTING_GUIDE.md**: Step-by-step testing instructions and test scenarios
+- **POLL_OPTIONS_MODIFICATION_PLAN.md**: Implementation plan for poll options feature (completed)
+
+### Archived Documentation
+- **DEVELOPMENT_PLAN.md.archived**: Original development plan (superseded)
+- **IMPLEMENTATION_SUMMARY.md.archived**: Old implementation summary (outdated)

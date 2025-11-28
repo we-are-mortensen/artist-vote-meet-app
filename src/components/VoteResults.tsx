@@ -1,6 +1,6 @@
 /**
  * Displays voting results on the main stage
- * Shows vote counts, percentages, and visual bars for each participant
+ * Shows vote counts, percentages, and visual bars for each poll option
  */
 
 import type { VoteResults as VoteResultsType } from '../types/poll.types';
@@ -16,7 +16,7 @@ export default function VoteResults({
   results,
   votingInProgress = true,
 }: VoteResultsProps) {
-  const { results: participantResults, totalVotes, hasTie, winner } = results;
+  const { results: optionResults, totalVotes, hasTie, winner } = results;
 
   if (totalVotes === 0) {
     return (
@@ -78,7 +78,7 @@ export default function VoteResults({
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-1">
-            Guanyador: {winner.participantName}
+            Guanyador: {winner.optionName}
           </h2>
           <p className="text-yellow-700 dark:text-yellow-300">
             {winner.voteCount} {winner.voteCount === 1 ? 'vot' : 'vots'} ({winner.percentage.toFixed(1)}%)
@@ -93,20 +93,20 @@ export default function VoteResults({
             Empat!
           </h2>
           <p className="text-orange-700 dark:text-orange-300">
-            Hi ha diversos participants empatats a la primera posició
+            Hi ha diverses opcions empatades a la primera posició
           </p>
         </div>
       )}
 
       {/* Results list */}
       <div className="results-list space-y-4">
-        {participantResults.map((result, index) => {
-          const isWinner = !hasTie && result.participantId === winner?.participantId;
-          const isTied = hasTie && result.voteCount === participantResults[0].voteCount && result.voteCount > 0;
+        {optionResults.map((result, index) => {
+          const isWinner = !hasTie && result.optionId === winner?.optionId;
+          const isTied = hasTie && result.voteCount === optionResults[0].voteCount && result.voteCount > 0;
 
           return (
             <div
-              key={result.participantId}
+              key={result.optionId}
               className={`
                 result-item p-4 rounded-lg border-2 transition-all
                 ${
@@ -118,14 +118,14 @@ export default function VoteResults({
                 }
               `}
             >
-              {/* Participant info */}
+              {/* Option info */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl font-bold text-gray-400 dark:text-gray-600">
                     #{index + 1}
                   </span>
                   <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    {result.participantName}
+                    {result.optionName}
                   </span>
                   {isWinner && (
                     <span className="text-yellow-500 text-2xl" aria-label="Guanyador">
