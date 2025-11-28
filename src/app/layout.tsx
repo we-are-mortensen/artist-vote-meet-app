@@ -1,8 +1,8 @@
 import { type Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Pretty Colors',
-  description: 'Google Meet Add-on that shows an animation',
+  title: "Votació de l'Artista",
+  description: "Complement de Google Meet per votar qui és l'artista d'avui",
 };
 
 export default function RootLayout({
@@ -11,7 +11,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="ca">
       <body>{children}</body>
     </html>
   );
